@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to version control
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+environment = "dev"
