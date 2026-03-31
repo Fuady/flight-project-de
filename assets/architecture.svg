@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520" font-family="Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="520" fill="#0f172a" rx="16"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">
+    ✈  Flight Delays — Data Engineering Pipeline
+  </text>
+  <text x="450" y="58" text-anchor="middle" font-size="11" fill="#64748b">
+    GCS · Airflow · Spark · BigQuery · dbt · Streamlit
+  </text>
+
+  <!-- Layer backgrounds -->
+  <!-- Source -->
+  <rect x="24" y="76" width="852" height="70" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+  <text x="36" y="116" font-size="10" fill="#475569" font-weight="600">SOURCE</text>
+
+  <!-- Ingest -->
+  <rect x="24" y="158" width="852" height="80" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+  <text x="36" y="200" font-size="10" fill="#475569" font-weight="600">INGEST  /  IaC</text>
+
+  <!-- Transform -->
+  <rect x="24" y="250" width="852" height="80" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+  <text x="36" y="292" font-size="10" fill="#475569" font-weight="600">TRANSFORM</text>
+
+  <!-- Serve -->
+  <rect x="24" y="342" width="852" height="80" rx="8" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+  <text x="36" y="384" font-size="10" fill="#475569" font-weight="600">SERVE</text>
+
+  <!-- ── SOURCE: BTS ── -->
+  <rect x="310" y="88" width="280" height="46" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <text x="450" y="107" text-anchor="middle" font-size="13" font-weight="700" fill="#93c5fd">BTS On-Time Dataset</text>
+  <text x="450" y="124" text-anchor="middle" font-size="10" fill="#60a5fa">transtats.bts.gov · CSV · ~500 MB/year</text>
+
+  <!-- ── INGEST: Airflow, GCS, Terraform ── -->
+  <!-- Airflow -->
+  <rect x="80" y="168" width="200" height="56" rx="8" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="180" y="191" text-anchor="middle" font-size="13" font-weight="700" fill="#86efac">Airflow DAG</text>
+  <text x="180" y="208" text-anchor="middle" font-size="10" fill="#4ade80">Batch orchestration (monthly)</text>
+
+  <!-- GCS -->
+  <rect x="350" y="168" width="200" height="56" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <text x="450" y="191" text-anchor="middle" font-size="13" font-weight="700" fill="#93c5fd">GCS Data Lake</text>
+  <text x="450" y="208" text-anchor="middle" font-size="10" fill="#60a5fa">raw/ + processed/ buckets</text>
+
+  <!-- Terraform -->
+  <rect x="620" y="168" width="200" height="56" rx="8" fill="#3b1f5e" stroke="#a855f7" stroke-width="1"/>
+  <text x="720" y="191" text-anchor="middle" font-size="13" font-weight="700" fill="#d8b4fe">Terraform</text>
+  <text x="720" y="208" text-anchor="middle" font-size="10" fill="#c084fc">GCS · BigQuery · SA · Dataproc</text>
+
+  <!-- ── TRANSFORM: Spark, dbt, BigQuery ── -->
+  <!-- Spark -->
+  <rect x="80" y="260" width="190" height="56" rx="8" fill="#451a03" stroke="#f97316" stroke-width="1"/>
+  <text x="175" y="283" text-anchor="middle" font-size="13" font-weight="700" fill="#fdba74">PySpark</text>
+  <text x="175" y="300" text-anchor="middle" font-size="10" fill="#fb923c">Clean · cast · enrich · Parquet</text>
+
+  <!-- dbt -->
+  <rect x="355" y="260" width="190" height="56" rx="8" fill="#4c1d25" stroke="#f43f5e" stroke-width="1"/>
+  <text x="450" y="283" text-anchor="middle" font-size="13" font-weight="700" fill="#fda4af">dbt</text>
+  <text x="450" y="300" text-anchor="middle" font-size="10" fill="#fb7185">staging · mart · tests</text>
+
+  <!-- BigQuery -->
+  <rect x="628" y="260" width="200" height="56" rx="8" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1"/>
+  <text x="728" y="283" text-anchor="middle" font-size="13" font-weight="700" fill="#7dd3fc">BigQuery DWH</text>
+  <text x="728" y="300" text-anchor="middle" font-size="10" fill="#38bdf8">Partitioned (month) · Clustered</text>
+
+  <!-- ── SERVE ── -->
+  <!-- Looker Studio -->
+  <rect x="155" y="352" width="200" height="56" rx="8" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="255" y="375" text-anchor="middle" font-size="13" font-weight="700" fill="#86efac">Looker Studio</text>
+  <text x="255" y="392" text-anchor="middle" font-size="10" fill="#4ade80">Tile 1: Bar · Tile 2: Line</text>
+
+  <!-- Streamlit -->
+  <rect x="545" y="352" width="200" height="56" rx="8" fill="#3b1f5e" stroke="#a855f7" stroke-width="1"/>
+  <text x="645" y="375" text-anchor="middle" font-size="13" font-weight="700" fill="#d8b4fe">Streamlit</text>
+  <text x="645" y="392" text-anchor="middle" font-size="10" fill="#c084fc">Interactive Python dashboard</text>
+
+  <!-- ── Arrows ── -->
+  <!-- BTS → Airflow -->
+  <line x1="380" y1="134" x2="250" y2="168" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)" stroke-dasharray="4 3"/>
+  <!-- BTS → GCS label -->
+  <line x1="450" y1="134" x2="450" y2="168" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+  <!-- Airflow → GCS -->
+  <line x1="280" y1="196" x2="350" y2="196" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+  <!-- Terraform → (infra, dashed) -->
+  <line x1="620" y1="196" x2="550" y2="196" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+  <!-- GCS → Spark -->
+  <line x1="400" y1="224" x2="240" y2="260" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+  <!-- Spark → BQ staging (via dbt arrow) -->
+  <line x1="265" y1="288" x2="355" y2="288" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+  <!-- dbt → BQ -->
+  <line x1="545" y1="288" x2="628" y2="288" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+  <!-- BQ → Looker -->
+  <line x1="680" y1="316" x2="320" y2="352" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+  <!-- BQ → Streamlit -->
+  <line x1="728" y1="316" x2="695" y2="352" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr)"/>
+
+  <!-- ── Legend ── -->
+  <rect x="24" y="436" width="852" height="68" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
+  <text x="450" y="456" text-anchor="middle" font-size="10" fill="#64748b" font-weight="600">LEGEND</text>
+
+  <rect x="80"  y="464" width="12" height="12" rx="2" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="98"  y="475" font-size="10" fill="#94a3b8">Orchestration / Viz</text>
+
+  <rect x="220" y="464" width="12" height="12" rx="2" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <text x="238" y="475" font-size="10" fill="#94a3b8">Storage / DWH</text>
+
+  <rect x="350" y="464" width="12" height="12" rx="2" fill="#451a03" stroke="#f97316" stroke-width="1"/>
+  <text x="368" y="475" font-size="10" fill="#94a3b8">Processing (Spark)</text>
+
+  <rect x="500" y="464" width="12" height="12" rx="2" fill="#4c1d25" stroke="#f43f5e" stroke-width="1"/>
+  <text x="518" y="475" font-size="10" fill="#94a3b8">Transformation (dbt)</text>
+
+  <rect x="660" y="464" width="12" height="12" rx="2" fill="#3b1f5e" stroke="#a855f7" stroke-width="1"/>
+  <text x="678" y="475" font-size="10" fill="#94a3b8">IaC / Streamlit</text>
+
+  <!-- dashed = infra/config arrow -->
+  <line x1="80" y1="490" x2="104" y2="490" stroke="#6b7280" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="110" y="494" font-size="10" fill="#94a3b8">Infrastructure provisioning</text>
+  <line x1="280" y1="490" x2="304" y2="490" stroke="#6b7280" stroke-width="1"/>
+  <text x="310" y="494" font-size="10" fill="#94a3b8">Data flow</text>
+</svg>
