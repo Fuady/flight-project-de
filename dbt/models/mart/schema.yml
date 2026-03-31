@@ -1,0 +1,76 @@
+version: 2
+
+models:
+  - name: fct_flights
+    description: >
+      Core fact table. One row per operated (non-cancelled) flight leg.
+      Partitioned by fl_date (MONTH), clustered by carrier_code + origin_airport.
+    columns:
+      - name: flight_id
+        description: "Surrogate key: hash of date + carrier + flight_num + origin + dest"
+        tests:
+          - unique
+          - not_null
+      - name: fl_date
+        tests: [not_null]
+      - name: carrier_code
+        tests: [not_null]
+      - name: origin_airport
+        tests: [not_null]
+      - name: dest_airport
+        tests: [not_null]
+      - name: is_delayed
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: delay_bucket
+        tests:
+          - accepted_values:
+              values:
+                - "On time"
+                - "Minor (1-15 min)"
+                - "Moderate (16-60 min)"
+                - "Severe (1-3 hrs)"
+                - "Extreme (>3 hrs)"
+
+  - name: dim_carriers
+    description: "Dimension table mapping IATA codes to full airline names."
+    columns:
+      - name: carrier_code
+        tests:
+          - unique
+          - not_null
+      - name: carrier_name
+        tests: [not_null]
+
+  - name: rpt_delay_by_carrier
+    description: >
+      Report table for Dashboard Tile 1.
+      Aggregated delay metrics grouped by airline carrier.
+    columns:
+      - name: carrier_code
+        tests:
+          - unique
+          - not_null
+      - name: total_flights
+        tests: [not_null]
+      - name: delay_pct
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0 and delay_pct <= 100"
+
+  - name: rpt_delay_trend
+    description: >
+      Report table for Dashboard Tile 2.
+      Monthly aggregated delay trend with 3-month rolling average.
+    columns:
+      - name: year_month
+        tests:
+          - unique
+          - not_null
+      - name: month_start_date
+        tests: [not_null]
+      - name: total_flights
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> 0"

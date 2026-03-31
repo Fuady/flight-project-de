@@ -1,0 +1,38 @@
+version: 2
+
+sources:
+  - name: flights_raw
+    database: "{{ env_var('DBT_PROJECT_ID') }}"
+    schema: flights_staging
+    description: "Raw flight on-time performance data loaded from GCS via Spark"
+
+    tables:
+      - name: raw_flights
+        description: >
+          BTS On-Time Performance data. Each row represents one flight leg.
+          Partitioned by fl_date (MONTH), clustered by mkt_carrier and origin.
+        columns:
+          - name: fl_date
+            description: "Flight date (DATE)"
+            tests:
+              - not_null
+          - name: mkt_carrier
+            description: "IATA airline code (e.g. AA, DL, UA)"
+            tests:
+              - not_null
+          - name: origin
+            description: "Origin airport IATA code"
+            tests:
+              - not_null
+          - name: dest
+            description: "Destination airport IATA code"
+            tests:
+              - not_null
+          - name: dep_delay
+            description: "Departure delay in minutes (negative = early)"
+          - name: arr_delay
+            description: "Arrival delay in minutes (negative = early)"
+          - name: cancelled
+            description: "1.0 if cancelled, 0.0 otherwise"
+          - name: cancellation_code
+            description: "A=Carrier, B=Weather, C=NAS, D=Security"

@@ -1,0 +1,24 @@
+name: 'flights_de'
+version: '1.0.0'
+config-version: 2
+
+profile: 'flights_de'
+
+model-paths:   ["models"]
+analysis-paths: ["analyses"]
+test-paths:    ["tests"]
+seed-paths:    ["seeds"]
+macro-paths:   ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path:   "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  flights_de:
+    staging:
+      +materialized: view
+      +schema: flights_staging
+    mart:
+      +materialized: table
+      +schema: flights_mart
