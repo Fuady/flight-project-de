@@ -49,3 +49,246 @@ The result is a reproducible, cloud-native pipeline that answers questions like:
 
 ---
 
+## Architecture Overview
+
+```
+BTS Website (CSV)
+      │
+      ▼
+┌─────────────┐     ┌───────────────────────┐
+│  Airflow    │────▶│  GCS (raw bucket)      │
+│  DAG        │     │  gs://.../raw/YYYY/MM/ │
+└─────────────┘     └───────────┬───────────┘
+      │                         │
+      │  (triggers)             ▼
+      │             ┌───────────────────────┐
+      └────────────▶│  PySpark (Dataproc)   │
+                    │  Clean · Enrich ·      │
+                    │  Write Parquet         │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  GCS (processed)       │
+                    │  Partitioned Parquet   │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  BigQuery (staging)    │
+                    │  Partitioned by month  │
+                    │  Clustered by carrier  │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  dbt                   │
+                    │  stg_flights           │
+                    │  fct_flights           │
+                    │  rpt_delay_by_carrier  │
+                    │  rpt_delay_trend       │
+                    └───────────┬───────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    ▼                       ▼
+          ┌──────────────┐       ┌──────────────────┐
+          │ Looker Studio │       │    Streamlit      │
+          │  (Tile 1+2)   │       │   Dashboard       │
+          └──────────────┘       └──────────────────┘
+```
+
+**Infrastructure as Code:** All GCP resources (GCS buckets, BigQuery datasets, Dataproc cluster, service account) are provisioned with Terraform.
+
+---
+
+## Tech Stack
+
+| Layer | Tool | Purpose |
+|---|---|---|
+| Cloud | **GCP** | All infrastructure |
+| IaC | **Terraform** | Provision GCS, BigQuery, Dataproc, IAM |
+| Orchestration | **Apache Airflow** | Batch DAG (monthly schedule) |
+| Data Lake | **Google Cloud Storage** | Raw CSV + processed Parquet |
+| Processing | **PySpark on Dataproc** | Cleaning, enrichment, type-casting |
+| Data Warehouse | **BigQuery** | Partitioned + clustered fact tables |
+| Transformation | **dbt** | Staging views, mart tables, tests |
+| Dashboard | **Streamlit + Plotly** | Two-tile interactive dashboard |
+| CI/CD | **GitHub Actions** | Lint, test, terraform plan, deploy |
+| Containerisation | **Docker Compose** | Local dev environment |
+
+---
+
+## Project Structure
+
+```
+flights-de-project/
+├── assets/
+│   └── architecture.svg          # Architecture diagram
+├── airflow/
+│   └── dags/
+│       └── flights_pipeline.py   # 7-step Airflow DAG
+├── spark/
+│   └── spark_transform.py        # PySpark cleaning & enrichment job
+├── dbt/
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+│   └── models/
+│       ├── staging/
+│       │   ├── sources.yml
+│       │   └── stg_flights.sql
+│       └── mart/
+│           ├── schema.yml
+│           ├── dim_carriers.sql
+│           ├── fct_flights.sql          # Core fact table (partitioned + clustered)
+│           ├── rpt_delay_by_carrier.sql # Dashboard tile 1
+│           └── rpt_delay_trend.sql      # Dashboard tile 2
+├── dashboard/
+│   └── app.py                    # Streamlit dashboard
+├── terraform/
+│   ├── main.tf                   # GCS, BigQuery, Dataproc, IAM
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── terraform.tfvars.example
+├── tests/
+│   └── test_spark_transform.py   # Unit tests for PySpark job
+├── scripts/
+│   └── setup.sh                  # One-time local setup helper
+├── .github/
+│   └── workflows/
+│       └── ci.yml                # GitHub Actions CI/CD
+├── .env.example
+├── .gitignore
+├── docker-compose.yml
+└── requirements.txt
+```
+
+---
+
+## Prerequisites
+
+| Tool | Version | Install |
+|---|---|---|
+| Python | ≥ 3.11 | [python.org](https://python.org) |
+| Docker + Compose | latest | [docker.com](https://docker.com) |
+| Terraform | ≥ 1.3 | [terraform.io](https://developer.hashicorp.com/terraform/install) |
+| Google Cloud SDK | latest | [cloud.google.com/sdk](https://cloud.google.com/sdk/docs/install) |
+| GCP Account | — | [console.cloud.google.com](https://console.cloud.google.com) |
+
+You will also need a GCP project with billing enabled and the following APIs enabled:
+
+```bash
+gcloud services enable \
+  storage.googleapis.com \
+  bigquery.googleapis.com \
+  dataproc.googleapis.com \
+  iam.googleapis.com
+```
+
+---
+
+## Quickstart
+
+### 1. Clone & Setup
+
+```bash
+git clone https://github.com/your-username/flights-de-project.git
+cd flights-de-project
+
+# Run one-time setup (creates venv, copies .env and tfvars templates)
+bash scripts/setup.sh
+```
+
+### 2. Configure GCP
+
+**Create a service account key:**
+
+```bash
+# Create SA (if not using Terraform yet)
+gcloud iam service-accounts create flights-pipeline-sa \
+  --display-name="Flights DE Pipeline SA"
+
+# Grant roles
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:flights-pipeline-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/storage.admin"
+
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:flights-pipeline-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.admin"
+
+# Download key
+gcloud iam service-accounts keys create keys/sa-key.json \
+  --iam-account=flights-pipeline-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+```
+
+**Edit `.env`:**
+
+```bash
+cp .env.example .env
+# Then open .env and set:
+#   GCP_PROJECT_ID=your-actual-project-id
+#   GCS_RAW_BUCKET=your-actual-project-id-flights-raw
+#   GCS_PROCESSED_BUCKET=your-actual-project-id-flights-processed
+```
+
+### 3. Provision Infrastructure (Terraform)
+
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars: set project_id = "your-actual-project-id"
+
+terraform init
+terraform plan    # Review what will be created
+terraform apply   # Type 'yes' to confirm
+
+cd ..
+```
+
+This creates:
+- GCS bucket: `YOUR_PROJECT-flights-raw`
+- GCS bucket: `YOUR_PROJECT-flights-processed`
+- BigQuery dataset: `flights_staging`
+- BigQuery dataset: `flights_mart`
+- Dataproc cluster: `flights-spark-cluster`
+- Service account + IAM bindings
+
+### 4. Start Services (Docker Compose)
+
+```bash
+# Linux: set AIRFLOW_UID first
+echo "AIRFLOW_UID=$(id -u)" >> .env
+
+docker-compose up -d
+
+# Wait ~30s for Airflow to initialise, then check:
+docker-compose ps
+```
+
+Services started:
+| Service | URL |
+|---|---|
+| Airflow UI | http://localhost:8080 (admin / admin) |
+| Streamlit Dashboard | http://localhost:8501 |
+| PostgreSQL (metadata) | localhost:5432 |
+
+### 5. Trigger the Pipeline (Airflow)
+
+1. Open http://localhost:8080
+2. Log in with **admin / admin**
+3. Find the DAG **`flights_batch_pipeline`**
+4. Toggle it **ON** using the slider
+5. Click ▶ **Trigger DAG** to run immediately (uses prior month's data)
+6. Watch the task graph — each step should go green in order
+
+The DAG runs these tasks sequentially:
+```
+download_bts_data
+  → upload_raw_to_gcs
+    → upload_spark_script
+      → run_spark_job
+        → load_to_bigquery
+          → run_dbt_staging
+            → run_dbt_mart
+              → notify_success
+```
