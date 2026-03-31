@@ -25,7 +25,6 @@
   - [BigQuery Schema](#bigquery-schema)
   - [dbt Models](#dbt-models)
   - [Dashboard Tiles](#dashboard-tiles)
-- [Evaluation Criteria Coverage](#evaluation-criteria-coverage)
 - [Development](#development)
 - [Troubleshooting](#troubleshooting)
 
