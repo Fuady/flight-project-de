@@ -1,0 +1,23 @@
+# Airflow + GCP providers
+apache-airflow==2.8.1
+apache-airflow-providers-google==10.13.1
+apache-airflow-providers-common-sql==1.11.1
+
+# dbt
+dbt-core==1.7.0
+dbt-bigquery==1.7.0
+dbt-utils==1.1.1
+
+# Dashboard
+streamlit==1.31.0
+plotly==5.18.0
+pandas==2.1.4
+google-cloud-bigquery==3.14.1
+db-dtypes==1.2.0
+
+# PySpark (local testing)
+pyspark==3.5.0
+
+# Dev tools
+black==24.1.1
+pytest==7.4.4
