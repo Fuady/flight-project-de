@@ -404,3 +404,64 @@ dbt tests run automatically after each mart build:
 | 2b | Stacked area | Monthly delay causes over time | `rpt_delay_trend` |
 
 ---
+
+
+---
+
+## Development
+
+### Run tests locally
+
+```bash
+source .venv/bin/activate
+pytest tests/ -v
+```
+
+### Lint
+
+```bash
+black airflow/ spark/ dashboard/
+```
+
+### Add a new month of data manually
+
+```bash
+# Upload a CSV directly to GCS and trigger Airflow manually:
+gcloud storage cp your_file.csv gs://PROJECT-flights-raw/raw/2024/06/flights.csv
+
+# Then trigger the DAG from UI or CLI:
+docker-compose exec airflow-scheduler \
+  airflow dags trigger flights_batch_pipeline
+```
+
+---
+
+## Troubleshooting
+
+**Airflow DAG not visible**
+```bash
+docker-compose exec airflow-scheduler airflow dags list
+docker-compose logs airflow-scheduler | tail -50
+```
+
+**Spark job fails on Dataproc**
+- Check the Dataproc job logs in GCP Console → Dataproc → Jobs
+- Ensure the service account has `roles/dataproc.worker`
+- Verify `SPARK_JOB_FILE` is uploaded: `gcloud storage ls gs://PROJECT-flights-raw/scripts/`
+
+**dbt connection error**
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=./keys/sa-key.json
+cd dbt && dbt debug --profiles-dir .
+```
+
+**BigQuery permission denied**
+- Ensure the SA has `roles/bigquery.admin` on the project
+- Verify the correct project ID is set in `.env` and `terraform.tfvars`
+
+**Dashboard shows no data**
+- Confirm the full pipeline has run (all Airflow tasks green)
+- Check BigQuery: `SELECT COUNT(*) FROM flights_mart.rpt_delay_by_carrier`
+- Verify `GCP_PROJECT_ID` env var is set in the dashboard container
+
+---
