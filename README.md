@@ -292,3 +292,115 @@ download_bts_data
             → run_dbt_mart
               → notify_success
 ```
+
+### 6. Run dbt Models
+
+You can also run dbt manually from your local machine:
+
+```bash
+source .venv/bin/activate
+cd dbt
+
+export DBT_PROJECT_ID=your-project-id
+export GOOGLE_APPLICATION_CREDENTIALS=../keys/sa-key.json
+
+# Run all models
+dbt run --profiles-dir . --target prod
+
+# Run only staging
+dbt run --select staging --profiles-dir . --target prod
+
+# Run mart + tests
+dbt run  --select mart --profiles-dir . --target prod
+dbt test --select mart --profiles-dir . --target prod
+
+# Generate docs
+dbt docs generate && dbt docs serve
+```
+
+### 7. View the Dashboard
+
+Open **http://localhost:8501** in your browser.
+
+The dashboard displays:
+
+**Tile 1 — Delay by Airline (categorical)**  
+Bar chart ranking airlines by average arrival delay, with delay cause breakdown.
+
+**Tile 2 — Monthly Delay Trend (temporal)**  
+Line chart showing delay evolution over time with a 3-month rolling average, plus a stacked area of delay causes.
+
+---
+
+## Pipeline Details
+
+### Data Ingestion
+
+- **Source:** BTS On-Time Reporting Carrier On-Time Performance (`transtats.bts.gov`)
+- **Format:** ZIP containing CSV, ~500 MB/year, ~7M rows/year
+- **Schedule:** Monthly batch (5th of each month, processes prior month)
+- **Raw storage:** `gs://PROJECT-flights-raw/raw/YYYY/MM/flights.csv`
+
+### Spark Transformation
+
+The PySpark job (`spark/spark_transform.py`) applies:
+
+| Step | Detail |
+|---|---|
+| Column rename | All columns converted to snake_case |
+| Type casting | Dates → `DateType`, delays → `FloatType`, flight numbers → `IntegerType` |
+| Null filtering | Drops rows missing `fl_date`, `origin`, `dest`, or `mkt_carrier` |
+| Outlier removal | Removes rows where `abs(arr_delay) > 1440` min (data errors) |
+| `is_delayed` flag | `True` when `arr_delay > 15 min` |
+| `delay_bucket` | Categorical: On time / Minor / Moderate / Severe / Extreme |
+| `primary_delay_cause` | Carrier / Weather / NAS / Late Aircraft (largest component) |
+| `total_delay` | `COALESCE(arr_delay, 0)` |
+| Date parts | `year`, `month` columns for partitioning |
+| Output | Snappy Parquet, partitioned by `year/month` |
+
+### BigQuery Schema
+
+**Fact table: `flights_mart.fct_flights`**
+
+| Partition | Cluster | Reason |
+|---|---|---|
+| `fl_date` (MONTH) | `carrier_code`, `origin_airport` | Dashboard queries always filter by date range; clustering reduces bytes scanned within each partition for carrier/airport group-bys |
+
+This design means a query like:
+```sql
+SELECT carrier_name, AVG(arr_delay)
+FROM flights_mart.fct_flights
+WHERE fl_date BETWEEN '2024-01-01' AND '2024-12-31'
+  AND carrier_code = 'AA'
+GROUP BY 1
+```
+...will only scan partitions within 2024 and only the `AA` blocks within those partitions — typically 10–100× cheaper than a full table scan.
+
+### dbt Models
+
+```
+staging/
+  stg_flights          → View: light cleaning, dedupe, null filters, remove cancelled
+
+mart/
+  dim_carriers         → Static table: IATA code → airline name
+  fct_flights          → Partitioned fact table (partitioned + clustered)
+  rpt_delay_by_carrier → Aggregated by carrier (dashboard tile 1)
+  rpt_delay_trend      → Aggregated by month (dashboard tile 2)
+```
+
+dbt tests run automatically after each mart build:
+- `unique` + `not_null` on all primary keys
+- `accepted_values` for `is_delayed`, `delay_bucket`
+- `expression_is_true` for `delay_pct` between 0–100%
+
+### Dashboard Tiles
+
+| Tile | Chart type | Metric | dbt model |
+|---|---|---|---|
+| 1 | Horizontal bar | Avg arrival delay by airline | `rpt_delay_by_carrier` |
+| 1b | Stacked bar | Delay cause breakdown by carrier | `rpt_delay_by_carrier` |
+| 2 | Line + bar | Monthly avg delay + total flights | `rpt_delay_trend` |
+| 2b | Stacked area | Monthly delay causes over time | `rpt_delay_trend` |
+
+---
